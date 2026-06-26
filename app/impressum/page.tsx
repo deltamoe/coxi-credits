@@ -3,8 +3,8 @@ import { LegalPageLayout } from "@/components/LegalPageLayout";
 import { CONTACT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Legal Notice | Coxi Credits",
-  description: "Legal notice for Coxi Credits",
+  title: "Legal Notice | GTC Neuroscience Credits",
+  description: "Legal notice for GTC Neuroscience Credits",
 };
 
 export default function ImpressumPage() {
@@ -48,8 +48,8 @@ export default function ImpressumPage() {
         </p>
         <p>
           This tool is not officially affiliated with, endorsed by, or connected
-          to the University of Osnabrück (Universität Osnabrück) and is provided
-          for informational purposes only.
+          to the University of Tübingen and is provided for informational
+          purposes only.
         </p>
       </section>
 

@@ -1,12 +1,14 @@
-# Project description:
+# GTC Neuroscience Credit Calculator
 
-Website to track courses and calculate grades for the Cognitive Science Bachelor's degree in Osnabrück
-This is based on the new study regulation from 2024.
+Website to track modules and calculate grades for the three M.Sc. programs at the Graduate Training Centre of Neuroscience (University of Tübingen):
 
-If there are any questions or feedback, feel free to reach out to me at: mail@lucasaur.com
+- **Neural and Behavioural Sciences** (NB)
+- **Computational Neuroscience** (CN)
+- **Cellular and Molecular Neuroscience** (CM)
 
-<img width="1881" height="923" alt="image" src="https://github.com/user-attachments/assets/d39ff8f1-7439-4b5e-9a38-981f9b7036ee" />
+Based on the study and examination regulations (Prüfungsordnung) and module handbooks.
 
+If there are any questions or feedback, feel free to reach out at: mail@lucasaur.com
 
 ## Getting Started
 

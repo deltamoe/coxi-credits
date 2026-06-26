@@ -102,3 +102,7 @@ export function weightedAverage(
     ? Number((weightedSum / totalCredits).toFixed(2))
     : null;
 }
+
+export function formatAverageGrade(grade: number): string {
+  return grade.toFixed(2);
+}

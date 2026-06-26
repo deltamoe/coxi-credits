@@ -4,8 +4,8 @@ import { LegalPageLayout } from "@/components/LegalPageLayout";
 import { CONTACT_EMAIL, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Coxi Credits",
-  description: "Privacy policy for Coxi Credits",
+  title: "Privacy Policy | GTC Neuroscience Credits",
+  description: "Privacy policy for GTC Neuroscience Credits",
 };
 
 export default function DatenschutzPage() {
@@ -28,11 +28,13 @@ export default function DatenschutzPage() {
       <section className="space-y-2">
         <h2>2. Overview</h2>
         <p>
-          &ldquo;Coxi Credits&rdquo; (
+          &ldquo;GTC Neuroscience Credits&rdquo; (
           <a href={SITE_URL}>coxi-credits.vercel.app</a>) is a free,
           non-commercial online tool for tracking study progress and estimating
-          grades in the Cognitive Science program (Bachelor and Master) at the
-          University of Osnabrück.
+          grades in the M.Sc. programs at the Graduate Training Centre of
+          Neuroscience (University of Tübingen): Neural and Behavioural
+          Sciences, Computational Neuroscience, and Cellular and Molecular
+          Neuroscience.
         </p>
         <p>
           There is no registration and no user account. Your study data
@@ -52,12 +54,10 @@ export default function DatenschutzPage() {
           locally (<code>localStorage</code>) so your progress is preserved:
         </p>
         <ul>
-          <li>Selected program (Bachelor or Master)</li>
-          <li>Completed mandatory courses and electives</li>
-          <li>Free electives (name, ECTS, grade)</li>
-          <li>Mathematics ECTS (Bachelor)</li>
-          <li>Grades and course selections</li>
-          <li>Master: study project, thesis, mandatory elective areas</li>
+          <li>Selected program (NB, CN, or CM)</li>
+          <li>Module grades for graded modules</li>
+          <li>Completion status for ungraded modules (electives, RCR, lab rotations)</li>
+          <li>Master&apos;s thesis grade</li>
         </ul>
         <p>
           Legal basis: Art. 6 (1) (b) GDPR (technically necessary to provide the
@@ -192,7 +192,7 @@ export default function DatenschutzPage() {
         <h3>3.6 External links</h3>
         <p>The website links to external sites, including:</p>
         <ul>
-          <li>Google Slides (explanations of the study plan)</li>
+          <li>University of Tübingen program pages</li>
           <li>GitHub (project source code)</li>
         </ul>
         <p>

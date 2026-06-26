@@ -1,0 +1,102 @@
+"use client";
+
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { validGrades } from "@/app/constants/programs";
+import { NeuroModule } from "@/app/types";
+import { getGroupColor } from "@/app/utils/colors";
+
+interface ModuleCardProps {
+  module: NeuroModule;
+  grade: number | string | undefined;
+  completed: boolean;
+  onSetGrade: (moduleId: string, grade: number | string | "") => void;
+  onToggleCompletion: (moduleId: string) => void;
+  isExporting?: boolean;
+}
+
+export function ModuleCard({
+  module,
+  grade,
+  completed,
+  onSetGrade,
+  onToggleCompletion,
+  isExporting = false,
+}: ModuleCardProps) {
+  const borderColor = getGroupColor(module.group);
+  const gradeValue =
+    typeof grade === "number"
+      ? grade.toFixed(1)
+      : grade !== undefined && grade !== "-"
+        ? String(grade)
+        : "-";
+
+  return (
+    <div
+      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white rounded-lg border-l-4 ${borderColor} border border-gray-200`}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-mono font-semibold text-gray-500">
+            {module.code}
+          </span>
+          <span className="text-xs font-medium text-gray-500">
+            {module.credits} CP
+          </span>
+          {module.kind === "completion" && !module.countsTowardFinal && (
+            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+              Not in final grade
+            </span>
+          )}
+        </div>
+        <p className="font-medium text-gray-900 mt-1">{module.name}</p>
+      </div>
+
+      <div className="flex items-center gap-3 shrink-0">
+        {module.kind === "graded" || module.kind === "thesis" ? (
+          <Select
+            value={gradeValue}
+            onValueChange={(value) => {
+              if (value === "-") {
+                onSetGrade(module.id, "");
+              } else {
+                onSetGrade(module.id, parseFloat(value));
+              }
+            }}
+            disabled={isExporting}
+          >
+            <SelectTrigger className="w-24">
+              <SelectValue placeholder="Grade" />
+            </SelectTrigger>
+            <SelectContent>
+              {validGrades.map((g) => (
+                <SelectItem key={g} value={g}>
+                  {g}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`module-${module.id}`}
+              checked={completed}
+              onCheckedChange={() => onToggleCompletion(module.id)}
+              disabled={isExporting}
+            />
+            <Label htmlFor={`module-${module.id}`} className="text-sm">
+              Completed
+            </Label>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

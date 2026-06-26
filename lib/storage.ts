@@ -1,55 +1,32 @@
 import {
-  BachelorExportPayload,
+  AddedCourse,
   CombinedExportPayload,
-  ExportPayload,
-  MasterExportPayload,
-  Program,
-  StudyProjectState,
+  CombinedExportPayloadV3,
+  ProgramExportPayload,
+  ProgramId,
 } from "@/app/types";
-import { STUDY_PROJECT_PARTS } from "@/app/constants/master";
+import { PROGRAM_IDS } from "@/app/constants/programs";
+
+const DEFAULT_PROGRAM_DATA: ProgramExportPayload = {
+  grades: {},
+  completedModules: [],
+  thesisGrade: null,
+  userCourses: {},
+  slotSelections: {},
+};
+
+export function storageKey(programId: ProgramId, suffix: string): string {
+  return `${programId}.${suffix}`;
+}
 
 export const STORAGE_KEYS = {
   activeProgram: "activeProgram",
-  bachelor: {
-    completedCourses: "completedCourses",
-    electiveCourses: "electiveCourses",
-    freeElectiveCourses: "freeElectiveCourses",
-    mathCredits: "mathCredits",
-    grades: "grades",
-    courseSelections: "courseSelections",
-  },
-  master: {
-    studyProject: "master.studyProject",
-    thesis: "master.thesis",
-    mandatoryElectives: "master.mandatoryElectives",
-    freeElectives: "master.freeElectives",
-    grades: "master.grades",
-    thesisGrade: "master.thesisGrade",
-  },
+  grades: "grades",
+  completedModules: "completedModules",
+  thesisGrade: "thesisGrade",
+  userCourses: "userCourses",
+  slotSelections: "slotSelections",
 } as const;
-
-const DEFAULT_BACHELOR: BachelorExportPayload = {
-  completedCourses: [],
-  electiveCourses: [],
-  freeElectiveCourses: [],
-  mathCredits: 9,
-  grades: {},
-  courseSelections: {},
-};
-
-const DEFAULT_STUDY_PROJECT: StudyProjectState = {
-  part1Completed: false,
-  part2Completed: false,
-};
-
-const DEFAULT_MASTER: MasterExportPayload = {
-  studyProject: DEFAULT_STUDY_PROJECT,
-  thesis: { completed: false },
-  mandatoryElectives: [],
-  freeElectives: [],
-  grades: {},
-  thesisGrade: null,
-};
 
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -82,271 +59,188 @@ export function subscribeActiveProgram(listener: () => void): () => void {
   };
 }
 
-export function getActiveProgramSnapshot(): Program {
+export function getActiveProgramSnapshot(): ProgramId {
   return readActiveProgram();
 }
 
-export function getActiveProgramServerSnapshot(): Program {
-  return "bachelor";
+export function getActiveProgramServerSnapshot(): ProgramId {
+  return "nb";
 }
 
-export function readActiveProgram(): Program {
+function isProgramId(value: unknown): value is ProgramId {
+  return value === "nb" || value === "cn" || value === "cm";
+}
+
+export function readActiveProgram(): ProgramId {
   const value = readJson<string | null>(STORAGE_KEYS.activeProgram, null);
-  return value === "master" ? "master" : "bachelor";
+  return isProgramId(value) ? value : "nb";
 }
 
-export function writeActiveProgram(program: Program): void {
+export function writeActiveProgram(program: ProgramId): void {
   writeJson(STORAGE_KEYS.activeProgram, program);
   notifyActiveProgramChange();
 }
 
-export function readBachelorData(): BachelorExportPayload {
-  return {
-    completedCourses: readJson(
-      STORAGE_KEYS.bachelor.completedCourses,
-      DEFAULT_BACHELOR.completedCourses,
-    ),
-    electiveCourses: readJson(
-      STORAGE_KEYS.bachelor.electiveCourses,
-      DEFAULT_BACHELOR.electiveCourses,
-    ),
-    freeElectiveCourses: readJson(
-      STORAGE_KEYS.bachelor.freeElectiveCourses,
-      DEFAULT_BACHELOR.freeElectiveCourses,
-    ),
-    mathCredits: readJson(
-      STORAGE_KEYS.bachelor.mathCredits,
-      DEFAULT_BACHELOR.mathCredits,
-    ),
-    grades: readJson(STORAGE_KEYS.bachelor.grades, DEFAULT_BACHELOR.grades),
-    courseSelections: readJson(
-      STORAGE_KEYS.bachelor.courseSelections,
-      DEFAULT_BACHELOR.courseSelections,
-    ),
-  };
+function normalizeUserCourses(raw: unknown): Record<string, AddedCourse[]> {
+  if (!raw || typeof raw !== "object") return {};
+
+  const result: Record<string, AddedCourse[]> = {};
+  for (const [moduleId, courses] of Object.entries(raw)) {
+    if (!Array.isArray(courses)) continue;
+    result[moduleId] = courses
+      .filter(
+        (course): course is AddedCourse =>
+          course != null &&
+          typeof course === "object" &&
+          typeof course.id === "string" &&
+          typeof course.name === "string" &&
+          typeof course.credits === "number" &&
+          typeof course.graded === "boolean",
+      )
+      .map((course) => ({
+        id: course.id,
+        name: course.name,
+        credits: course.credits,
+        graded: course.graded,
+      }));
+  }
+  return result;
 }
 
-export function writeBachelorData(data: BachelorExportPayload): void {
-  writeJson(STORAGE_KEYS.bachelor.completedCourses, data.completedCourses);
-  writeJson(STORAGE_KEYS.bachelor.electiveCourses, data.electiveCourses);
-  writeJson(
-    STORAGE_KEYS.bachelor.freeElectiveCourses,
-    data.freeElectiveCourses,
-  );
-  writeJson(STORAGE_KEYS.bachelor.mathCredits, data.mathCredits);
-  writeJson(STORAGE_KEYS.bachelor.grades, data.grades);
-  writeJson(
-    STORAGE_KEYS.bachelor.courseSelections,
-    data.courseSelections ?? {},
-  );
-}
-
-function normalizeStudyProjectState(raw: unknown): StudyProjectState {
-  if (!raw || typeof raw !== "object") {
-    return DEFAULT_STUDY_PROJECT;
-  }
-
-  const data = raw as Record<string, unknown>;
-
-  if (
-    typeof data.part1Completed === "boolean" &&
-    typeof data.part2Completed === "boolean"
-  ) {
-    return {
-      part1Completed: data.part1Completed,
-      part2Completed: data.part2Completed,
-    };
-  }
-
-  if (typeof data.completed === "boolean") {
-    return {
-      part1Completed: data.completed,
-      part2Completed: data.completed,
-    };
-  }
-
-  return DEFAULT_STUDY_PROJECT;
-}
-
-function migrateStudyProjectGrades(
-  grades: Record<string, number | string>,
-): Record<string, number | string> {
-  const legacyGrade = grades["study-project"];
-  if (legacyGrade === undefined) {
-    return grades;
-  }
-
-  const next = { ...grades };
-  for (const part of STUDY_PROJECT_PARTS) {
-    if (next[part.id] === undefined) {
-      next[part.id] = legacyGrade;
+function normalizeSlotSelections(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object") return {};
+  const result: Record<string, string> = {};
+  for (const [slotId, optionId] of Object.entries(raw)) {
+    if (typeof optionId === "string" && optionId) {
+      result[slotId] = optionId;
     }
   }
-  delete next["study-project"];
-  return next;
+  return result;
 }
 
-export function readMasterData(): MasterExportPayload {
-  const thesisGrade = readJson(
-    STORAGE_KEYS.master.thesisGrade,
-    DEFAULT_MASTER.thesisGrade,
-  );
-  const storedThesis = readJson<{ completed?: boolean } | null>(
-    STORAGE_KEYS.master.thesis,
-    null,
-  );
-  const thesis =
-    storedThesis && typeof storedThesis.completed === "boolean"
-      ? { completed: storedThesis.completed }
-      : thesisGrade !== null
-        ? { completed: true }
-        : DEFAULT_MASTER.thesis;
+function normalizeProgramPayload(raw: unknown): ProgramExportPayload {
+  if (!raw || typeof raw !== "object") {
+    return { ...DEFAULT_PROGRAM_DATA };
+  }
 
-  const studyProject = normalizeStudyProjectState(
-    readJson(STORAGE_KEYS.master.studyProject, DEFAULT_MASTER.studyProject),
-  );
-  const grades = migrateStudyProjectGrades(
-    readJson(STORAGE_KEYS.master.grades, DEFAULT_MASTER.grades),
-  );
+  const data = raw as Partial<ProgramExportPayload>;
 
   return {
-    studyProject,
-    thesis,
-    mandatoryElectives: readJson(
-      STORAGE_KEYS.master.mandatoryElectives,
-      DEFAULT_MASTER.mandatoryElectives,
-    ),
-    freeElectives: readJson(
-      STORAGE_KEYS.master.freeElectives,
-      DEFAULT_MASTER.freeElectives,
-    ),
-    grades,
-    thesisGrade,
+    grades:
+      data.grades && typeof data.grades === "object" ? data.grades : {},
+    completedModules: Array.isArray(data.completedModules)
+      ? data.completedModules.filter(Boolean)
+      : [],
+    thesisGrade:
+      typeof data.thesisGrade === "number" ? data.thesisGrade : null,
+    userCourses: normalizeUserCourses(data.userCourses),
+    slotSelections: normalizeSlotSelections(data.slotSelections),
   };
 }
 
-export function writeMasterData(data: MasterExportPayload): void {
-  writeJson(STORAGE_KEYS.master.studyProject, data.studyProject);
-  writeJson(STORAGE_KEYS.master.thesis, data.thesis);
-  writeJson(STORAGE_KEYS.master.mandatoryElectives, data.mandatoryElectives);
-  writeJson(STORAGE_KEYS.master.freeElectives, data.freeElectives);
-  writeJson(STORAGE_KEYS.master.grades, data.grades);
-  writeJson(STORAGE_KEYS.master.thesisGrade, data.thesisGrade);
+export function readProgramData(programId: ProgramId): ProgramExportPayload {
+  return {
+    grades: readJson(
+      storageKey(programId, STORAGE_KEYS.grades),
+      DEFAULT_PROGRAM_DATA.grades,
+    ),
+    completedModules: readJson(
+      storageKey(programId, STORAGE_KEYS.completedModules),
+      DEFAULT_PROGRAM_DATA.completedModules,
+    ),
+    thesisGrade: readJson(
+      storageKey(programId, STORAGE_KEYS.thesisGrade),
+      DEFAULT_PROGRAM_DATA.thesisGrade,
+    ),
+    userCourses: readJson(
+      storageKey(programId, STORAGE_KEYS.userCourses),
+      DEFAULT_PROGRAM_DATA.userCourses,
+    ),
+    slotSelections: readJson(
+      storageKey(programId, STORAGE_KEYS.slotSelections),
+      DEFAULT_PROGRAM_DATA.slotSelections,
+    ),
+  };
+}
+
+export function writeProgramData(
+  programId: ProgramId,
+  data: ProgramExportPayload,
+): void {
+  writeJson(storageKey(programId, STORAGE_KEYS.grades), data.grades);
+  writeJson(
+    storageKey(programId, STORAGE_KEYS.completedModules),
+    data.completedModules,
+  );
+  writeJson(storageKey(programId, STORAGE_KEYS.thesisGrade), data.thesisGrade);
+  writeJson(storageKey(programId, STORAGE_KEYS.userCourses), data.userCourses);
+  writeJson(
+    storageKey(programId, STORAGE_KEYS.slotSelections),
+    data.slotSelections,
+  );
 }
 
 export function exportAllData(): string {
   const payload: CombinedExportPayload = {
-    version: 2,
+    version: 4,
     activeProgram: readActiveProgram(),
-    bachelor: readBachelorData(),
-    master: readMasterData(),
+    programs: {
+      nb: readProgramData("nb"),
+      cn: readProgramData("cn"),
+      cm: readProgramData("cm"),
+    },
   };
   return JSON.stringify(payload);
 }
 
-function isLegacyV1(payload: unknown): payload is ExportPayload {
-  if (!payload || typeof payload !== "object") return false;
-  const data = payload as ExportPayload;
-  return data.version === 1 && Array.isArray(data.completedCourses);
-}
-
-function isCombinedV2(payload: unknown): payload is CombinedExportPayload {
+function isCombinedV4(payload: unknown): payload is CombinedExportPayload {
   if (!payload || typeof payload !== "object") return false;
   const data = payload as CombinedExportPayload;
-  return data.version === 2 && data.bachelor != null && data.master != null;
+  return data.version === 4 && data.programs != null;
+}
+
+function isCombinedV3(payload: unknown): payload is CombinedExportPayloadV3 {
+  if (!payload || typeof payload !== "object") return false;
+  const data = payload as CombinedExportPayloadV3;
+  return data.version === 3 && data.programs != null;
 }
 
 export function importAllData(payload: unknown): void {
-  if (isCombinedV2(payload)) {
-    writeBachelorData({
-      completedCourses: Array.isArray(payload.bachelor.completedCourses)
-        ? payload.bachelor.completedCourses.filter(Boolean)
-        : [],
-      electiveCourses: Array.isArray(payload.bachelor.electiveCourses)
-        ? payload.bachelor.electiveCourses
-        : [],
-      freeElectiveCourses: Array.isArray(payload.bachelor.freeElectiveCourses)
-        ? payload.bachelor.freeElectiveCourses
-        : [],
-      mathCredits:
-        typeof payload.bachelor.mathCredits === "number"
-          ? payload.bachelor.mathCredits
-          : 9,
-      grades:
-        payload.bachelor.grades && typeof payload.bachelor.grades === "object"
-          ? payload.bachelor.grades
-          : {},
-      courseSelections:
-        payload.bachelor.courseSelections &&
-        typeof payload.bachelor.courseSelections === "object"
-          ? payload.bachelor.courseSelections
-          : {},
-    });
-    writeMasterData({
-      studyProject: normalizeStudyProjectState(
-        payload.master.studyProject ?? DEFAULT_MASTER.studyProject,
-      ),
-      thesis:
-        payload.master.thesis &&
-        typeof payload.master.thesis.completed === "boolean"
-          ? payload.master.thesis
-          : typeof payload.master.thesisGrade === "number"
-            ? { completed: true }
-            : DEFAULT_MASTER.thesis,
-      mandatoryElectives: Array.isArray(payload.master.mandatoryElectives)
-        ? payload.master.mandatoryElectives
-        : [],
-      freeElectives: Array.isArray(payload.master.freeElectives)
-        ? payload.master.freeElectives
-        : [],
-      grades: migrateStudyProjectGrades(
-        payload.master.grades && typeof payload.master.grades === "object"
-          ? payload.master.grades
-          : {},
-      ),
-      thesisGrade:
-        typeof payload.master.thesisGrade === "number"
-          ? payload.master.thesisGrade
-          : null,
-    });
-    if (
-      payload.activeProgram === "master" ||
-      payload.activeProgram === "bachelor"
-    ) {
+  if (isCombinedV4(payload)) {
+    for (const programId of PROGRAM_IDS) {
+      writeProgramData(
+        programId,
+        normalizeProgramPayload(payload.programs[programId]),
+      );
+    }
+
+    if (isProgramId(payload.activeProgram)) {
       writeJson(STORAGE_KEYS.activeProgram, payload.activeProgram);
     }
+
     notifyActiveProgramChange();
     return;
   }
 
-  if (isLegacyV1(payload)) {
-    writeBachelorData({
-      completedCourses: Array.isArray(payload.completedCourses)
-        ? payload.completedCourses.filter(Boolean)
-        : [],
-      electiveCourses: Array.isArray(payload.electiveCourses)
-        ? payload.electiveCourses
-        : [],
-      freeElectiveCourses: Array.isArray(payload.freeElectiveCourses)
-        ? payload.freeElectiveCourses
-        : [],
-      mathCredits:
-        typeof payload.mathCredits === "number" ? payload.mathCredits : 9,
-      grades:
-        payload.grades && typeof payload.grades === "object"
-          ? payload.grades
-          : {},
-      courseSelections:
-        payload.courseSelections && typeof payload.courseSelections === "object"
-          ? payload.courseSelections
-          : {},
-    });
-    writeJson(STORAGE_KEYS.activeProgram, "bachelor");
+  if (isCombinedV3(payload)) {
+    writeProgramData("nb", { ...DEFAULT_PROGRAM_DATA });
+
+    for (const programId of ["cn", "cm"] as const) {
+      writeProgramData(
+        programId,
+        normalizeProgramPayload(payload.programs[programId]),
+      );
+    }
+
+    if (isProgramId(payload.activeProgram)) {
+      writeJson(STORAGE_KEYS.activeProgram, payload.activeProgram);
+    }
+
     notifyActiveProgramChange();
     return;
   }
 
   throw new Error(
-    "Invalid JSON backup. Expected version 1 (Bachelor) or version 2 (combined).",
+    "Invalid JSON backup. Expected version 4 (detailed NB) or version 3 (legacy).",
   );
 }

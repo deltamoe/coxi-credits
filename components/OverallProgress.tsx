@@ -1,4 +1,5 @@
 import { Progress } from "@/components/ui/progress";
+import { formatAverageGrade } from "@/lib/gradeSelection";
 
 interface OverallProgressProps {
   title?: string;
@@ -10,6 +11,7 @@ interface OverallProgressProps {
   finalGrade?: number | null;
   thesisGrade?: number | null;
   thesisCompleted?: boolean;
+  finalGradeRatioLabel?: string;
 }
 
 export function OverallProgress({
@@ -22,6 +24,7 @@ export function OverallProgress({
   finalGrade,
   thesisGrade,
   thesisCompleted = false,
+  finalGradeRatioLabel = "3:1",
 }: OverallProgressProps) {
   const showMasterGrades = courseworkGrade !== undefined;
 
@@ -36,22 +39,28 @@ export function OverallProgress({
       {showMasterGrades ? (
         <div className="text-lg text-center mt-2 space-y-1">
           {courseworkGrade !== null && (
-            <p className="font-semibold">Coursework Grade: {courseworkGrade}</p>
+            <p className="font-semibold">
+              Coursework Grade: {formatAverageGrade(courseworkGrade)}
+            </p>
           )}
           {thesisCompleted && thesisGrade !== null && (
             <p className="font-semibold">Thesis Grade: {thesisGrade}</p>
           )}
           {thesisCompleted &&
-            finalGrade !== null &&
-            courseworkGrade !== null &&
-            thesisGrade !== null && (
-              <p className="font-semibold">Final Grade (3:2): {finalGrade}</p>
+            finalGrade != null &&
+            courseworkGrade != null &&
+            thesisGrade != null && (
+              <p className="font-semibold">
+                Final Grade ({finalGradeRatioLabel}):{" "}
+                {formatAverageGrade(finalGrade)}
+              </p>
             )}
         </div>
       ) : (
         currentWeightedGrade !== null && (
           <p className="text-lg text-center mt-2 font-semibold">
-            Weighted Grade Average: {currentWeightedGrade}
+            Weighted Grade Average:{" "}
+            {formatAverageGrade(currentWeightedGrade)}
           </p>
         )
       )}

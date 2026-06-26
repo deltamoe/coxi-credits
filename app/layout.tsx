@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Coxi Credits",
-  description: "Overview of your Coxi Course Credits",
+  title: "GTC Neuroscience Credits",
+  description:
+    "Track credits and calculate grades for the Graduate Training Centre of Neuroscience M.Sc. programs at the University of Tübingen",
 };
 
 export default function RootLayout({

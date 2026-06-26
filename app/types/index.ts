@@ -1,81 +1,81 @@
-export interface Course {
+export type ProgramId = "nb" | "cn" | "cm";
+
+export type ModuleGroup =
+  | "foundations"
+  | "advanced"
+  | "core"
+  | "electives"
+  | "research"
+  | "thesis";
+
+export type ModuleKind = "graded" | "completion" | "thesis";
+
+export interface NeuroSubCourse {
   id: string;
   name: string;
   credits: number;
-  category: "foundation" | "cs" | "math" | "ai" | "philosophy" | "psychology";
-  required?: boolean;
-  options?: number;
-  totalInGroup?: number;
-  grade?: number;
+  graded: boolean;
+  weight?: number;
 }
 
-export interface ElectiveCourse {
+export interface GuidedSlotOption {
   id: string;
   name: string;
-  credits: number;
-  area: "ai" | "philosophy" | "psychology" | "cs" | "math" | "foundation";
-  grade?: number;
 }
 
-export interface FreeElectiveCourse {
+export interface GuidedSlot {
   id: string;
-  name: string;
+  label: string;
   credits: number;
+  graded: boolean;
+  options: GuidedSlotOption[];
 }
 
-export type MasterArea = "mes" | "aiml" | "neuro" | "plc" | "methods";
-
-export interface MasterElectiveCourse {
-  id: string;
-  name: string;
-  credits: number;
-  area: MasterArea;
-}
-
-export interface MasterFreeElectiveCourse {
+export interface AddedCourse {
   id: string;
   name: string;
   credits: number;
   graded: boolean;
 }
 
-export interface StudyProjectState {
-  part1Completed: boolean;
-  part2Completed: boolean;
+export type ModuleStructure =
+  | { type: "subCourses"; subCourses: NeuroSubCourse[] }
+  | { type: "guidedSlots"; slots: GuidedSlot[] }
+  | { type: "userAdded"; targetCredits: number; graded: boolean }
+  | { type: "thesis" };
+
+export interface NeuroModule {
+  id: string;
+  code: string;
+  name: string;
+  credits: number;
+  kind: ModuleKind;
+  countsTowardFinal: boolean;
+  group: ModuleGroup;
+  hint?: string;
+  structure?: ModuleStructure;
 }
 
-export interface ThesisState {
-  completed: boolean;
-}
-
-export type Program = "bachelor" | "master";
-
-export interface BachelorExportPayload {
-  completedCourses: string[];
-  electiveCourses: ElectiveCourse[];
-  freeElectiveCourses: FreeElectiveCourse[];
-  mathCredits: number;
+export interface ProgramExportPayload {
   grades: Record<string, number | string>;
-  courseSelections?: Record<string, string>;
-}
-
-export interface MasterExportPayload {
-  studyProject: StudyProjectState;
-  thesis: ThesisState;
-  mandatoryElectives: MasterElectiveCourse[];
-  freeElectives: MasterFreeElectiveCourse[];
-  grades: Record<string, number | string>;
+  completedModules: string[];
   thesisGrade: number | null;
-}
-
-/** @deprecated Use CombinedExportPayload v2 instead */
-export interface ExportPayload extends BachelorExportPayload {
-  version: 1;
+  userCourses: Record<string, AddedCourse[]>;
+  slotSelections: Record<string, string>;
 }
 
 export interface CombinedExportPayload {
-  version: 2;
-  activeProgram?: Program;
-  bachelor: BachelorExportPayload;
-  master: MasterExportPayload;
+  version: 4;
+  activeProgram?: ProgramId;
+  programs: Record<ProgramId, ProgramExportPayload>;
+}
+
+/** @deprecated Use CombinedExportPayload v4 */
+export interface CombinedExportPayloadV3 {
+  version: 3;
+  activeProgram?: ProgramId;
+  programs: Record<
+    ProgramId,
+    Omit<ProgramExportPayload, "userCourses" | "slotSelections">
+  >;
 }

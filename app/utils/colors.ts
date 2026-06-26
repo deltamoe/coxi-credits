@@ -1,31 +1,41 @@
-import { Course, MasterArea } from "../types";
+import { ModuleGroup } from "@/app/types";
 
-export const getCategoryColor = (category: Course["category"] | MasterArea) => {
-  switch (category) {
-    case "foundation":
-    case "methods":
-      return "border-purple-500";
-    case "ai":
-    case "aiml":
+export function getGroupColor(group: ModuleGroup): string {
+  switch (group) {
+    case "foundations":
+    case "core":
       return "border-blue-500";
-    case "philosophy":
-    case "mes":
-      return "border-green-500";
-    case "psychology":
-    case "plc":
-      return "border-yellow-500";
-    case "cs":
-      return "border-orange-500";
-    case "math":
-      return "border-red-500";
-    case "neuro":
+    case "advanced":
+      return "border-indigo-500";
+    case "electives":
+      return "border-amber-500";
+    case "research":
       return "border-teal-500";
+    case "thesis":
+      return "border-purple-500";
     default: {
-      const _exhaustive: never = category;
+      const _exhaustive: never = group;
       return _exhaustive;
     }
   }
-};
+}
 
-export const getMasterAreaColor = (area: MasterArea): string =>
-  getCategoryColor(area);
+export function getGroupBackground(group: ModuleGroup): string {
+  switch (group) {
+    case "foundations":
+    case "core":
+      return "bg-blue-50";
+    case "advanced":
+      return "bg-indigo-50";
+    case "electives":
+      return "bg-amber-50";
+    case "research":
+      return "bg-teal-50";
+    case "thesis":
+      return "bg-purple-50";
+    default: {
+      const _exhaustive: never = group;
+      return _exhaustive;
+    }
+  }
+}

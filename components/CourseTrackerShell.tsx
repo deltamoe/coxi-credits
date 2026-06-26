@@ -3,9 +3,9 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/SiteFooter";
-import { BachelorView } from "@/components/BachelorView";
-import { MasterView } from "@/components/MasterView";
-import { Program } from "@/app/types";
+import { ProgramView } from "@/components/ProgramView";
+import { ProgramId } from "@/app/types";
+import { PROGRAM_IDS, PROGRAMS } from "@/app/constants/programs";
 import {
   exportAllData,
   getActiveProgramServerSnapshot,
@@ -30,7 +30,9 @@ export function CourseTrackerShell() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const handleProgramChange = (next: Program) => {
+  const activeConfig = PROGRAMS[program];
+
+  const handleProgramChange = (next: ProgramId) => {
     writeActiveProgram(next);
   };
 
@@ -43,7 +45,7 @@ export function CourseTrackerShell() {
       const dateStr = now.toISOString().split("T")[0];
       const a = document.createElement("a");
       a.href = url;
-      a.download = `coxi-credits-${dateStr}.json`;
+      a.download = `gtc-neuro-credits-${dateStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -156,7 +158,7 @@ export function CourseTrackerShell() {
 
         pdf.addImage(pageDataUrl, "JPEG", 0, 0, imgWidth, pageImgHeightMm);
 
-        const prefix = "Exported from Coxi Credits • ";
+        const prefix = "Exported from GTC Neuro Credits • ";
         const url = `${SITE_URL}/`;
         pdf.setFontSize(15);
         pdf.setTextColor(120, 120, 120);
@@ -174,7 +176,7 @@ export function CourseTrackerShell() {
         }
       }
 
-      pdf.save(`coxi-credits-${program}-${dateStr}.pdf`);
+      pdf.save(`gtc-neuro-credits-${program}-${dateStr}.pdf`);
     } catch (error) {
       reportClientError("Error generating PDF:", error);
       alert(`Failed to generate PDF: ${getErrorMessage(error)}`);
@@ -199,52 +201,41 @@ export function CourseTrackerShell() {
     <div className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="bg-orange-100 border border-orange-300 rounded-lg p-6 text-center">
         <h1 className="text-3xl font-bold text-black mb-4">
-          Coxi Grade Calculator
+          GTC Neuroscience Credit Calculator
         </h1>
 
-        <div className="inline-flex rounded-lg border border-orange-300 bg-white p-1 mb-4">
-          <button
-            type="button"
-            onClick={() => handleProgramChange("bachelor")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              program === "bachelor"
-                ? "bg-orange-500 text-white"
-                : "text-gray-700 hover:bg-orange-50"
-            }`}
-          >
-            Bachelor
-          </button>
-          <button
-            type="button"
-            onClick={() => handleProgramChange("master")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              program === "master"
-                ? "bg-orange-500 text-white"
-                : "text-gray-700 hover:bg-orange-50"
-            }`}
-          >
-            Master
-          </button>
+        <div className="inline-flex flex-wrap justify-center rounded-lg border border-orange-300 bg-white p-1 mb-4 gap-1">
+          {PROGRAM_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              title={PROGRAMS[id].fullName}
+              onClick={() => handleProgramChange(id)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                program === id
+                  ? "bg-orange-500 text-white"
+                  : "text-gray-700 hover:bg-orange-50"
+              }`}
+            >
+              {PROGRAMS[id].shortLabel}
+            </button>
+          ))}
         </div>
 
+        <p className="text-lg text-gray-800 mb-2">{activeConfig.fullName}</p>
+
         <a
-          href="https://docs.google.com/presentation/d/1Z9MCpDWbZTBiZc_2o6PQsPOk2LLjH4pgyAhDWan3scI/edit?slide=id.g30b09d76721_0_0#slide=id.g30b09d76721_0_0"
+          href={activeConfig.infoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="underline text-orange-600 hover:text-orange-800 text-lg block"
+          className="underline text-orange-600 hover:text-orange-800 text-sm block"
         >
-          {program === "bachelor"
-            ? "Explanation of the course system"
-            : "Master program structure"}
+          Official program information (University of Tübingen)
         </a>
       </div>
 
       <div ref={contentRef}>
-        {program === "bachelor" ? (
-          <BachelorView key={remountKey} isExporting={isExporting} />
-        ) : (
-          <MasterView key={remountKey} isExporting={isExporting} />
-        )}
+        <ProgramView key={remountKey} programId={program} isExporting={isExporting} />
       </div>
 
       <SiteFooter
@@ -272,8 +263,8 @@ export function CourseTrackerShell() {
               </Button>
             </div>
             <p className="text-xs text-gray-500 max-w-xl">
-              JSON export includes both Bachelor and Master data. Legacy
-              Bachelor-only backups (version 1) are still supported on import.
+              JSON export includes data for all three programs (NB, CN, CM).
+              Version 4 backups include detailed NB sub-course data.
             </p>
           </>
         }
@@ -285,7 +276,7 @@ export function CourseTrackerShell() {
             <h3 className="text-lg font-semibold">Upload JSON backup</h3>
             <p className="text-sm text-gray-600">
               Selecting a backup will overwrite your current settings and data
-              on this device (Bachelor and Master).
+              on this device for all three programs.
             </p>
             <input
               type="file"
